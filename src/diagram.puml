@@ -28,6 +28,24 @@ class Distance <<ValueObject>> {
   - value : double
 }
 
+class Flight <<Entity>> {
+  - flightId : String
+  - schedule : FlightSchedule
+  - aircraftId : String
+  - routeId : String
+  + checkRequirements()
+}
+
+class FlightSchedule <<ValueObject>> {
+  - departureTime : LocalDateTime
+  - arrivalTime : LocalDateTime
+  + getDuration()
+}
+
+Flight "1" --> "1" Route : follows
+Flight "1" --> "1" Aircraft : utilizes
+Flight "1" *-- "1" FlightSchedule
+
 Airport "1" *-- "1" Location
 Route "1" *-- "1" Distance
 
