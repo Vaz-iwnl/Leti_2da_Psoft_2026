@@ -1,0 +1,37 @@
+@startuml
+
+class Airport <<Entity>> {
+  - airportId : String
+  - name : String
+  - code : String
+  - location : Location
+  + updateLocation()
+}
+
+class Route <<Entity>> {
+  - routeId : String
+  - origin : Airport
+  - destination : Airport
+  - distance : Distance
+  - requiredRange : double
+  - requiredCapacity : int
+  - monthlyAverageFlights : double
+  + updateMonthlyAverageFlights()
+}
+
+class Location <<ValueObject>> {
+  - latitude : double
+  - longitude : double
+}
+
+class Distance <<ValueObject>> {
+  - value : double
+}
+
+Airport "1" *-- "1" Location
+Route "1" *-- "1" Distance
+
+Route "1" --> "1" Airport : origin
+Route "1" --> "1" Airport : destination
+
+@enduml
