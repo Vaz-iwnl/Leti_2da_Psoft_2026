@@ -1,55 +1,140 @@
 @startuml
+skinparam packageStyle rectangle
+skinparam hide empty members
 
-class Airport <<Entity>> {
-  - airportId : String
-  - name : String
-  - code : String
-  - location : Location
-  + updateLocation()
+package "Airport Aggregate" #E8F8F5 {
+    class Airport <<aggregate root>> {
+        - name : String
+        - city : String
+        - country : String
+    }
+    class AirportCode <<value object>> <<id>> {
+        - code : String
+    }
+    class Location <<value object>> {
+        - latitude : double
+        - longitude : double
+    }
+    class Timezone <<value object>>
+    class AirportStatus <<value object>>
+    class Runway <<entity>>
+    class AirplaneCertification <<entity>>
+
+    Airport "1" *-- "1" AirportCode
+    Airport "1" *-- "1" Location
+    Airport "1" *-- "1" Timezone
+    Airport "1" *-- "1" AirportStatus
+    Airport "1" *-- "0..*" Runway
+    Airport "1" *-- "0..*" AirplaneCertification
 }
 
-class Route <<Entity>> {
-  - routeId : String
-  - origin : Airport
-  - destination : Airport
-  - distance : Distance
-  - requiredRange : double
-  - requiredCapacity : int
-  - monthlyAverageFlights : double
-  + updateMonthlyAverageFlights()
+package "Route Aggregate" #FEF9E7 {
+    class Route <<aggregate root>>
+    class RouteId <<value object>> <<id>>
+    class RouteRequirements <<value object>> {
+        - minRange : double
+        - minCapacity : int
+    }
+    class FlightDuration <<value object>>
+    class RouteStatus <<value object>>
+
+    Route "1" *-- "1" RouteId
+    Route "1" *-- "1" RouteRequirements
+    Route "1" *-- "1" FlightDuration
+    Route "1" *-- "1" RouteStatus
+
+    ' Referências por ID para o Agregado Airport
+    Route "1" --> "1" AirportCode  : ref originId
+    Route "1" --> "1" AirportCode  : ref destinationId
 }
 
-class Location <<ValueObject>> {
-  - latitude : double
-  - longitude : double
+package "Aircraft Model Aggregate" #EBF5FB {
+    class AircraftModel <<aggregate root>> {
+        - modelName : String
+    }
+    class AircraftModelId <<value object>> <<id>>
+    class Manufacturer <<value object>>
+    class AircraftSpecs <<value object>> {
+        - seatingCapacity : int
+        - rate : int
+        - maxRange : double
+        - cruisingSpeed : double
+    }
+
+    AircraftModel "1" *-- "1" AircraftModelId
+    AircraftModel "1" *-- "1" Manufacturer
+    AircraftModel "1" *-- "1" AircraftSpecs
 }
 
-class Distance <<ValueObject>> {
-  - value : double
+package "Aircraft Aggregate" #FDF2E9 {
+    class Aircraft <<aggregate root>> {
+        - manufacturingDate : LocalDate
+    }
+    class AircraftRegistration <<value object>> <<id>> {
+        - registration : String
+    }
+    class AircraftStatus <<value object>>
+
+    Aircraft "1" *-- "1" AircraftRegistration
+    Aircraft "1" *-- "1" AircraftStatus
+
+    ' Referência por ID para o Agregado Aircraft Model
+    Aircraft "1" --> "1" AircraftModelId : ref modelId
 }
 
-class Flight <<Entity>> {
-  - flightId : String
-  - schedule : FlightSchedule
-  - aircraftId : String
-  - routeId : String
-  + checkRequirements()
+package "Scheduled Flight Aggregate" #F5EEF8 {
+    class ScheduledFlight <<aggregate root>>
+    class FlightId <<value object>> <<id>>
+    class FlightSchedule <<value object>> {
+        - departureLDT : LocalDateTime
+        - arrivalLDT : LocalDateTime
+    }
+
+    ScheduledFlight "1" *-- "1" FlightId
+    ScheduledFlight "1" *-- "1" FlightSchedule
+
+    ' Referências por ID para outros Agregados
+    ScheduledFlight "1" --> "1" RouteId : ref routeId
+    ScheduledFlight "1" --> "1" AircraftRegistration : ref aircraftRegistration
 }
 
-class FlightSchedule <<ValueObject>> {
-  - departureTime : LocalDateTime
-  - arrivalTime : LocalDateTime
-  + getDuration()
+package "Maintenance Template Aggregate" #F9EBEA {
+    class MaintenanceTemplate <<aggregate root>> {
+        - templateName : String
+    }
+    class TemplateId <<value object>> <<id>>
+    class TemplateType <<value object>>
+    class Checklist <<value object>>
+
+    MaintenanceTemplate "1" *-- "1" TemplateId
+    MaintenanceTemplate "1" *-- "1" TemplateType
+    MaintenanceTemplate "1" *-- "1" Checklist
+
+    ' Referência por ID para os modelos compatíveis
+    MaintenanceTemplate "1" --> "*" AircraftModelId : ref appliesToModels
 }
 
-Flight "1" --> "1" Route : follows
-Flight "1" --> "1" Aircraft : utilizes
-Flight "1" *-- "1" FlightSchedule
+package "Maintenance Record Aggregate" #F2F3F4 {
+    class MaintenanceRecord <<aggregate root>> {
+        - description : String
+        - completionNotes : String
+    }
+    class RecordId <<value object>> <<id>>
+    class MaintenanceSchedule <<value object>> {
+        - startDate : LocalDateTime
+        - expectedDuration : double
+    }
+    class MaintenanceComponent <<value object>>
+    class MaintenanceStatus <<value object>>
 
-Airport "1" *-- "1" Location
-Route "1" *-- "1" Distance
+    MaintenanceRecord "1" *-- "1" RecordId
+    MaintenanceRecord "1" *-- "1" MaintenanceSchedule
+    MaintenanceRecord "1" *-- "1" MaintenanceComponent
+    MaintenanceRecord "1" *-- "1" MaintenanceStatus
 
-Route "1" --> "1" Airport : origin
-Route "1" --> "1" Airport : destination
+    ' Referências por ID para o avião e para o template
+    MaintenanceRecord "1" --> "1" AircraftRegistration : ref targetAircraft
+    MaintenanceRecord "1" --> "1" TemplateId : ref usesTemplate
+}
 
 @enduml
