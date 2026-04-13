@@ -2,61 +2,71 @@
 skinparam packageStyle rectangle
 skinparam hide empty members
 
-package "Airport Aggregate" #E8F8F5 {
+' Aggregates define consistency boundaries
+' References between aggregates are done via identifiers
+
+package "Airport Aggregate" {
     class Airport <<aggregate root>> {
         - name : String
-        - city : String
-        - country : String
     }
-    class AirportCode <<value object>> <<id>> {
+
+    class AirportCode <<value object>> {
         - code : String
     }
+
     class Location <<value object>> {
+        - city : String
+        - country : String
         - latitude : double
         - longitude : double
     }
+
     class Timezone <<value object>>
     class AirportStatus <<value object>>
-    class Runway <<entity>>
-    class AirplaneCertification <<entity>>
+    class Runway <<value object>>
+    class AircraftCertification <<value object>>
 
     Airport "1" *-- "1" AirportCode
     Airport "1" *-- "1" Location
     Airport "1" *-- "1" Timezone
     Airport "1" *-- "1" AirportStatus
     Airport "1" *-- "0..*" Runway
-    Airport "1" *-- "0..*" AirplaneCertification
+    Airport "1" *-- "0..*" AircraftCertification
 }
 
-package "Route Aggregate" #FEF9E7 {
+package "Route Aggregate" {
     class Route <<aggregate root>>
-    class RouteId <<value object>> <<id>>
-    class RouteRequirements <<value object>> {
+
+    class RouteId <<value object>>
+
+    class RouteRequirement <<value object>> {
         - minRange : double
         - minCapacity : int
     }
+
     class FlightDuration <<value object>>
     class RouteStatus <<value object>>
 
     Route "1" *-- "1" RouteId
-    Route "1" *-- "1" RouteRequirements
+    Route "1" *-- "1" RouteRequirement
     Route "1" *-- "1" FlightDuration
     Route "1" *-- "1" RouteStatus
 
-    ' Referências por ID para o Agregado Airport
-    Route "1" --> "1" AirportCode  : ref originId
-    Route "1" --> "1" AirportCode  : ref destinationId
+    Route "1" --> "1" AirportCode : originId
+    Route "1" --> "1" AirportCode : destinationId
 }
 
-package "Aircraft Model Aggregate" #EBF5FB {
+package "Aircraft Model Aggregate" {
     class AircraftModel <<aggregate root>> {
         - modelName : String
     }
-    class AircraftModelId <<value object>> <<id>>
+
+    class AircraftModelId <<value object>>
     class Manufacturer <<value object>>
+
     class AircraftSpecs <<value object>> {
         - seatingCapacity : int
-        - rate : int
+        - fuelCapacity : int
         - maxRange : double
         - cruisingSpeed : double
     }
@@ -66,25 +76,28 @@ package "Aircraft Model Aggregate" #EBF5FB {
     AircraftModel "1" *-- "1" AircraftSpecs
 }
 
-package "Aircraft Aggregate" #FDF2E9 {
+package "Aircraft Aggregate" {
     class Aircraft <<aggregate root>> {
         - manufacturingDate : LocalDate
     }
-    class AircraftRegistration <<value object>> <<id>> {
+
+    class AircraftRegistration <<value object>> {
         - registration : String
     }
+
     class AircraftStatus <<value object>>
 
     Aircraft "1" *-- "1" AircraftRegistration
     Aircraft "1" *-- "1" AircraftStatus
 
-    ' Referência por ID para o Agregado Aircraft Model
-    Aircraft "1" --> "1" AircraftModelId : ref modelId
+    Aircraft "1" --> "1" AircraftModelId : modelId
 }
 
-package "Scheduled Flight Aggregate" #F5EEF8 {
+package "Scheduled Flight Aggregate" {
     class ScheduledFlight <<aggregate root>>
-    class FlightId <<value object>> <<id>>
+
+    class FlightId <<value object>>
+
     class FlightSchedule <<value object>> {
         - departureLDT : LocalDateTime
         - arrivalLDT : LocalDateTime
@@ -93,16 +106,16 @@ package "Scheduled Flight Aggregate" #F5EEF8 {
     ScheduledFlight "1" *-- "1" FlightId
     ScheduledFlight "1" *-- "1" FlightSchedule
 
-    ' Referências por ID para outros Agregados
-    ScheduledFlight "1" --> "1" RouteId : ref routeId
-    ScheduledFlight "1" --> "1" AircraftRegistration : ref aircraftRegistration
+    ScheduledFlight "1" --> "1" RouteId : routeId
+    ScheduledFlight "1" --> "1" AircraftRegistration : aircraftRegistration
 }
 
-package "Maintenance Template Aggregate" #F9EBEA {
+package "Maintenance Template Aggregate" {
     class MaintenanceTemplate <<aggregate root>> {
         - templateName : String
     }
-    class TemplateId <<value object>> <<id>>
+
+    class TemplateId <<value object>>
     class TemplateType <<value object>>
     class Checklist <<value object>>
 
@@ -110,20 +123,22 @@ package "Maintenance Template Aggregate" #F9EBEA {
     MaintenanceTemplate "1" *-- "1" TemplateType
     MaintenanceTemplate "1" *-- "1" Checklist
 
-    ' Referência por ID para os modelos compatíveis
-    MaintenanceTemplate "1" --> "*" AircraftModelId : ref appliesToModels
+    MaintenanceTemplate "1" --> "*" AircraftModelId : appliesToModels
 }
 
-package "Maintenance Record Aggregate" #F2F3F4 {
+package "Maintenance Record Aggregate" {
     class MaintenanceRecord <<aggregate root>> {
         - description : String
         - completionNotes : String
     }
-    class RecordId <<value object>> <<id>>
+
+    class RecordId <<value object>>
+
     class MaintenanceSchedule <<value object>> {
         - startDate : LocalDateTime
         - expectedDuration : double
     }
+
     class MaintenanceComponent <<value object>>
     class MaintenanceStatus <<value object>>
 
@@ -132,9 +147,8 @@ package "Maintenance Record Aggregate" #F2F3F4 {
     MaintenanceRecord "1" *-- "1" MaintenanceComponent
     MaintenanceRecord "1" *-- "1" MaintenanceStatus
 
-    ' Referências por ID para o avião e para o template
-    MaintenanceRecord "1" --> "1" AircraftRegistration : ref targetAircraft
-    MaintenanceRecord "1" --> "1" TemplateId : ref usesTemplate
+    MaintenanceRecord "1" --> "1" AircraftRegistration : targetAircraft
+    MaintenanceRecord "1" --> "1" TemplateId : usesTemplate
 }
 
 @enduml

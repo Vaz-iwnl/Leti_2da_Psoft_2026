@@ -1,46 +1,82 @@
 package domain.airport;
 
+import java.util.List;
 import java.util.Objects;
 
 public class Airport {
 
-    private final String airportId;
+    private final AirportCode code; // Aggregate ID
     private String name;
-    private String code;
     private Location location;
+    private Timezone timezone;
+    private AirportStatus status;
+    private List<Runway> runways;
+    private List<AirplaneCertification> certifications;
 
-    public Airport(String airportId, String name, String code, Location location) {
-        if (airportId == null || airportId.isBlank()) {
-            throw new IllegalArgumentException("Airport ID cannot be empty");
+    public Airport(AirportCode code,
+                   String name,
+                   Location location,
+                   Timezone timezone,
+                   AirportStatus status,
+                   List<Runway> runways,
+                   List<AirplaneCertification> certifications) {
+
+        if (code == null) {
+            throw new IllegalArgumentException("Airport code cannot be null");
         }
-        if (code == null || code.isBlank()) {
-            throw new IllegalArgumentException("Airport code cannot be empty");
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("Airport name cannot be empty");
+        }
+        if (location == null) {
+            throw new IllegalArgumentException("Location cannot be null");
         }
 
-        this.airportId = airportId;
-        this.name = name;
         this.code = code;
+        this.name = name;
         this.location = location;
+        this.timezone = timezone;
+        this.status = status;
+        this.runways = runways;
+        this.certifications = certifications;
     }
 
-    public String getAirportId() {
-        return airportId;
+    public AirportCode getCode() {
+        return code;
     }
 
     public String getName() {
         return name;
     }
 
-    public String getCode() {
-        return code;
-    }
-
     public Location getLocation() {
         return location;
     }
 
+    public Timezone getTimezone() {
+        return timezone;
+    }
+
+    public AirportStatus getStatus() {
+        return status;
+    }
+
+    public List<Runway> getRunways() {
+        return runways;
+    }
+
+    public List<AirplaneCertification> getCertifications() {
+        return certifications;
+    }
+
     public void updateLocation(Location newLocation) {
+        if (newLocation == null) {
+            throw new IllegalArgumentException("Location cannot be null");
+        }
         this.location = newLocation;
+    }
+
+    public void updateStatus(AirportStatus newStatus) {
+        this.status = newStatus;
     }
 
     @Override
@@ -48,11 +84,11 @@ public class Airport {
         if (this == o) return true;
         if (!(o instanceof Airport)) return false;
         Airport airport = (Airport) o;
-        return airportId.equals(airport.airportId);
+        return code.equals(airport.code);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(airportId);
+        return Objects.hash(code);
     }
 }
